@@ -1,0 +1,10 @@
+{% from "_componentes.html" import icono %}
+{% with mensajes = get_flashed_messages(with_categories=true) %}
+  {% if mensajes %}
+    <ul class="mensajes" role="status">
+      {% for categoria, texto in mensajes %}
+        <li class="{{ categoria }}">{{ icono({'exito': 'check', 'error': 'alerta'}.get(categoria, 'reloj')) }}<span>{{ texto }}</span></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
