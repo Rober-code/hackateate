@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono %}
+{% block titulo %}Rescata: que la comida buena no termine en la basura{% endblock %}
+
+{% macro boton_registro(rol, texto, clase='btn') -%}
+  {% if tiene('auth.registro') %}<a class="{{ clase }}" href="{{ url_for('auth.registro', rol=rol) }}">{{ texto }} {{ icono('flecha') }}</a>
+  {% else %}<span class="{{ clase }}" aria-disabled="true">{{ texto }}</span>{% endif %}
+{%- endmacro %}
+
+{% block cuerpo %}
+<section class="hero">
+  <div class="contenedor">
+    <div>
+      <div class="contenedor-mensajes">{% include "_mensajes.html" %}</div>
+      <span class="etiqueta-hero">{{ icono('hoja') }} Reto Segunda Mesa · Rescate de alimentos</span>
+      <h1>Que la comida buena <em>llegue a tiempo</em> a quien la aprovecha</h1>
+      <p class="bajada">Rescata ayuda a las tiendas de barrio a vender con descuento o donar sus productos antes de que caduquen, y les muestra cuánto dejaron de tirar.</p>
+      <div class="acciones">
+        {{ boton_registro('tienda', 'Registrar mi tienda', 'btn btn-grande') }}
+        {% if tiene('comprador.catalogo') %}<a class="btn btn-secundario btn-grande" href="{{ url_for('comprador.catalogo') }}">{{ icono('buscar') }} Ver productos</a>{% endif %}
+      </div>
+      <div class="hero-cifras" aria-label="Cifras de esta demo">
+        <div><div class="valor">{{ stats.disponibles }}</div><div class="nombre">productos por rescatar ahora</div></div>
+        <div><div class="valor">{{ stats.tiendas }}</div><div class="nombre">tiendas participantes</div></div>
+        <div><div class="valor">{{ stats.rescatadas }}</div><div class="nombre">unidades rescatadas</div></div>
+      </div>
+      <p class="ayuda">Cifras calculadas en vivo con los datos de demostración.</p>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="mock-tarjeta mock-producto">
+        <div class="titulo">Yogur natural 1 L</div>
+        <div class="tienda">Abarrotes La Esquina</div>
+        <div class="mock-escalera">
+          <div class="mock-escalon"><span>Faltan 6 días o más</span><strong>$42.00</strong></div>
+          <div class="mock-escalon"><span>Faltan 3 a 5 días · −20 %</span><strong>$33.60</strong></div>
+          <div class="mock-escalon actual"><span>Faltan 1 o 2 días · −40 %</span><strong>$25.20</strong></div>
+          <div class="mock-escalon donar"><span>Día de caducidad</span><strong>Se dona</strong></div>
+        </div>
+      </div>
+      <div class="mock-tarjeta mock-ia">
+        <div class="cabeza">{{ icono('chispa') }} Gemini leyó tu foto</div>
+        <p>Encontré 3 productos y sus fechas. Revisa y pon el precio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion" id="como-funciona">
+  <div class="contenedor">
+    <div class="seccion-cabeza">
+      <div class="pre">Cómo funciona</div>
+      <h2>Una escalera de rescate para cada producto</h2>
+      <p>Cada producto baja de escalón conforme se acerca su fecha, hasta venderse o donarse. Nada se pierde sin quedar registrado.</p>
+    </div>
+    <div class="pasos">
+      <div class="paso"><div class="num">1</div><h3>La tienda registra</h3><p>Una foto del refrigerador o una nota de voz. Gemini llena los datos y la tienda confirma.</p></div>
+      <div class="paso p2"><div class="num">2</div><h3>El precio baja solo</h3><p>20 % de descuento cuando faltan 3 a 5 días y 40 % con 1 o 2 días. Cada tienda ajusta sus porcentajes.</p></div>
+      <div class="paso p3"><div class="num">3</div><h3>Si no se vende, se dona</h3><p>El día que caduca, comedores y albergues lo apartan con hora de recogida.</p></div>
+      <div class="paso p4"><div class="num">4</div><h3>Se mide el impacto</h3><p>Cuánto se vendió, donó o tiró, y cuánto dinero se recuperó.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion blanca" id="para-quien">
+  <div class="contenedor">
+    <div class="seccion-cabeza">
+      <div class="pre">Para quién</div>
+      <h2>Tres formas de sumarte</h2>
+      <p>Crea tu cuenta según lo que haces. Es gratis para compradores y organizaciones.</p>
+    </div>
+    <div class="roles">
+      <div class="rol-tarjeta">
+        <div class="rol-icono tienda">{{ icono('tienda') }}</div>
+        <h3>Tiendas</h3>
+        <ul>
+          <li>{{ icono('check') }} Registra con foto o voz en segundos</li>
+          <li>{{ icono('check') }} Descuentos automáticos por fecha</li>
+          <li>{{ icono('check') }} Alertas y mensajes listos para WhatsApp</li>
+          <li>{{ icono('check') }} Tablero con lo que dejaste de tirar</li>
+        </ul>
+        {{ boton_registro('tienda', 'Registrar mi tienda') }}
+      </div>
+      <div class="rol-tarjeta">
+        <div class="rol-icono comprador">{{ icono('carrito') }}</div>
+        <h3>Compradores</h3>
+        <ul>
+          <li>{{ icono('check') }} Productos en buen estado a menor precio</li>
+          <li>{{ icono('check') }} Filtra por categoría, fecha y precio</li>
+          <li>{{ icono('check') }} Aparta y recoge en la tienda</li>
+        </ul>
+        {{ boton_registro('comprador', 'Crear cuenta de comprador') }}
+      </div>
+      <div class="rol-tarjeta">
+        <div class="rol-icono organizacion">{{ icono('corazon') }}</div>
+        <h3>Organizaciones</h3>
+        <ul>
+          <li>{{ icono('check') }} Comedores, albergues y bancos de alimentos</li>
+          <li>{{ icono('check') }} Avisos con cantidad clara</li>
+          <li>{{ icono('check') }} Tú eliges la hora de recogida</li>
+        </ul>
+        {{ boton_registro('organizacion', 'Registrar mi organización') }}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion">
+  <div class="contenedor franja-ia">
+    <div>
+      <div class="seccion-cabeza" style="text-align: left; margin: 0;"><div class="pre">Inteligencia artificial con propósito</div></div>
+      <h2>Gemini ahorra tiempo. Tú decides.</h2>
+      <p>La IA hace lo más tardado: leer etiquetas, entender lo que dictas y redactar mensajes. Pero los precios salen de una regla clara y la tienda siempre confirma antes de publicar. Una fecha en la app no certifica que un alimento esté en buen estado: eso lo decide la tienda.</p>
+    </div>
+    <div class="lista-ia">
+      <div class="item-ia"><div class="rol-icono">{{ icono('camara') }}</div><div><h4>Lee fotos</h4><p>De una etiqueta o del refrigerador completo, con sus fechas.</p></div></div>
+      <div class="item-ia"><div class="rol-icono">{{ icono('micro') }}</div><div><h4>Entiende lo que dictas</h4><p>"Me sobraron 12 bolillos y 4 leches que caducan mañana".</p></div></div>
+      <div class="item-ia"><div class="rol-icono">{{ icono('chat') }}</div><div><h4>Responde dudas</h4><p>Un asistente para tiendas, compradores y organizaciones.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="contenedor">
+  <div class="cta-final">
+    <div>
+      <h2>Empieza a rescatar hoy</h2>
+      <p>Crea tu cuenta en menos de un minuto.</p>
+    </div>
+    <div class="acciones">
+      {{ boton_registro('', 'Crear cuenta') }}
+      {% if tiene('comprador.catalogo') %}<a class="btn btn-secundario" href="{{ url_for('comprador.catalogo') }}">Ver productos</a>{% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

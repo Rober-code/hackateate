@@ -1,0 +1,82 @@
+{% from "_componentes.html" import icono, csrf, nombre_rol %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="{{ token_csrf() }}">
+  <title>{% block titulo %}Rescata{% endblock %} · Rescata</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%2315803d'/><path d='M6 18c0-7 4-11 12-12 0 8-5 12-11 12' fill='none' stroke='white' stroke-width='2'/></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  {% macro enlace(endpoint, texto, nombre_icono) -%}
+    {% if tiene(endpoint) %}<a href="{{ url_for(endpoint) }}" class="{% if request.endpoint == endpoint %}activo{% endif %}">{{ icono(nombre_icono) }}{{ texto }}</a>{% endif %}
+  {%- endmacro %}
+
+  <header class="nav">
+    <div class="contenedor">
+      <a class="marca" href="{{ url_for('inicio') }}"><span class="marca-logo">{{ icono('hoja') }}</span>Rescata</a>
+
+      <nav class="nav-enlaces" aria-label="Principal">
+        {% if not usuario %}
+          <a href="{{ url_for('inicio') }}#como-funciona">Cómo funciona</a>
+          <a href="{{ url_for('inicio') }}#para-quien">Para quién</a>
+          {{ enlace('comprador.catalogo', 'Productos', 'buscar') }}
+        {% elif usuario.rol == 'comprador' %}
+          {{ enlace('comprador.catalogo', 'Productos', 'buscar') }}
+          {{ enlace('comprador.apartados', 'Mis apartados', 'carrito') }}
+        {% elif usuario.rol == 'tienda' %}
+          {{ enlace('tienda.panel', 'Panel', 'tienda') }}
+          {{ enlace('ia.capturar', 'Registrar con IA', 'camara') }}
+          {{ enlace('tienda.impacto', 'Impacto', 'grafica') }}
+          {{ enlace('tienda.ajustes', 'Ajustes', 'ajustes') }}
+        {% elif usuario.rol == 'organizacion' %}
+          {{ enlace('organizacion.panel', 'Donativos', 'corazon') }}
+        {% endif %}
+      </nav>
+
+      <div class="nav-acciones">
+        {% if usuario %}
+          <span class="usuario-chip">
+            <span class="avatar">{{ usuario.nombre[:1]|upper }}</span>
+            <span class="datos"><span class="nombre">{{ usuario.nombre }}</span><span class="rol">{{ nombre_rol(usuario.rol) }}</span></span>
+          </span>
+          <form method="post" action="{{ url_for('auth.salir') }}">{{ csrf() }}<button class="btn-fantasma btn-chico" title="Salir">{{ icono('salir') }}<span class="sr-only">Salir</span></button></form>
+        {% elif tiene('auth.entrar') %}
+          <a class="btn btn-fantasma" href="{{ url_for('auth.entrar') }}">Entrar</a>
+          <a class="btn" href="{{ url_for('auth.registro') }}">Crear cuenta</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if tiene('demo.avanzar') %}
+  <div class="barra-demo">
+    <div class="contenedor">
+      <span><strong>Modo demo</strong> · Hoy es {{ hoy|fecha }}{% if dias_simulados %} (reloj adelantado {{ dias_simulados }} día{% if dias_simulados != 1 %}s{% endif %}){% endif %}</span>
+      <form method="post" action="{{ url_for('demo.avanzar') }}">{{ csrf() }}<button class="btn">{{ icono('reloj') }} Avanzar 1 día</button></form>
+      <form method="post" action="{{ url_for('demo.reiniciar') }}">{{ csrf() }}<button class="btn">Reiniciar demo</button></form>
+    </div>
+  </div>
+  {% endif %}
+
+  {% block cuerpo %}
+  <main class="pagina">
+    <div class="contenedor">
+      {% include "_mensajes.html" %}
+      {% block contenido %}{% endblock %}
+    </div>
+  </main>
+  {% endblock %}
+
+  <footer class="pie">
+    <div class="contenedor">
+      <span>Rescata · Reto Segunda Mesa · Hackateate</span>
+      <span>Los datos que ves son de demostración.</span>
+    </div>
+  </footer>
+
+  {% if tiene('chat.mensaje') %}{% include "_chat.html" %}{% endif %}
+</body>
+</html>

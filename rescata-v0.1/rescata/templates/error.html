@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono %}
+{% block titulo %}Error {{ codigo }}{% endblock %}
+{% block contenido %}
+<div class="vacio" style="padding: 64px 20px;">
+  {{ icono('alerta') }}
+  {% if codigo == 404 %}
+    <h1>No encontramos esta página</h1>
+    <p>Puede que el enlace esté mal escrito o que la página ya no exista.</p>
+  {% elif codigo == 403 %}
+    <h1>Esta sección no es para tu tipo de cuenta</h1>
+    <p>Entra con una cuenta de tienda, comprador u organización según corresponda.</p>
+  {% else %}
+    <h1>No pudimos procesar la solicitud</h1>
+    <p>Recarga la página e inténtalo de nuevo.</p>
+  {% endif %}
+  <p><a class="btn" href="{{ url_for('inicio') }}">Ir al inicio</a></p>
+</div>
+{% endblock %}
