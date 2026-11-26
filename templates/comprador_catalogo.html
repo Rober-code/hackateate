@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf, dias, precio, vacio %}
+{% block titulo %}Productos por rescatar{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Productos por rescatar</h1>
+    <p>En buen estado, cerca de ti y a menor precio porque caducan pronto. Apártalos y recógelos en la tienda.</p>
+  </div>
+  {% if usuario and usuario.rol == 'comprador' %}<a class="btn btn-secundario" href="{{ url_for('comprador.apartados') }}">{{ icono('carrito') }} Mis apartados</a>{% endif %}
+</div>
+
+<form class="tarjeta filtros" method="get">
+  <label>Buscar
+    <input name="buscar" value="{{ filtros.buscar }}" placeholder="Ej. leche, pan, queso">
+  </label>
+  <label>Categoría
+    <select name="categoria">
+      <option value="">Todas</option>
+      {% for c in categorias %}<option {% if filtros.categoria == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Caduca en máximo
+    <select name="max_dias">
+      <option value="">Cualquier fecha</option>
+      {% for d in [1, 2, 3, 5, 7] %}<option value="{{ d }}" {% if filtros.max_dias == d|string %}selected{% endif %}>{{ d }} día{% if d > 1 %}s{% endif %}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Precio máximo
+    <input name="precio_max" type="number" min="0" step="1" value="{{ filtros.precio_max }}" placeholder="$">
+  </label>
+  <div class="acciones">
+    <button>{{ icono('buscar') }} Filtrar</button>
+    <a class="btn btn-fantasma" href="{{ url_for('comprador.catalogo') }}">Limpiar</a>
+  </div>
+</form>
+
+{% if not usuario %}
+<ul class="mensajes"><li class="aviso">{{ icono('usuario') }}<span>Para apartar, <a href="{{ url_for('auth.entrar', siguiente=request.full_path) }}">entra</a> o <a href="{{ url_for('auth.registro', rol='comprador') }}">crea una cuenta de comprador</a>.</span></li></ul>
+{% endif %}
+
+{% if lotes %}
+<div class="rejilla">
+  {% for l in lotes %}
+  <article class="producto">
+    <div class="arriba">
+      <div>
+        <div class="categoria">{{ l.categoria }}</div>
+        <h3>{{ l.producto }}</h3>
+      </div>
+      {{ dias(l) }}
+    </div>
+    <div class="tienda">{{ icono('tienda') }} {{ l.tienda }} · {{ l.zona }}</div>
+    <div class="precio-fila">
+      {{ precio(l) }}
+      {% if l.descuento %}<span class="insignia naranja">{{ icono('etiqueta') }} −{{ l.descuento }} %</span>{% endif %}
+    </div>
+    <div class="pie-tarjeta">
+      <span class="quedan">Quedan {{ l.cantidad_disponible }} · caduca el {{ l.fecha_caducidad|fecha }}</span>
+      {% set texto = "Mira: " ~ l.producto ~ " a " ~ (l.precio_actual|dinero) ~ " en " ~ l.tienda ~ ". Caduca pronto; apártalo en Rescata." %}
+      <a href="https://wa.me/?text={{ texto|urlencode }}" target="_blank" rel="noopener" title="Compartir por WhatsApp">{{ icono('chat') }}</a>
+    </div>
+    {% if usuario and usuario.rol == 'comprador' %}
+    <form method="post" action="{{ url_for('comprador.apartar', lote_id=l.id) }}">
+      {{ csrf() }}
+      <input name="cantidad" type="number" min="1" max="{{ l.cantidad_disponible }}" value="1" required aria-label="Cantidad">
+      <button>{{ icono('carrito') }} Apartar</button>
+    </form>
+    {% elif not usuario %}
+    <a class="btn btn-secundario" href="{{ url_for('auth.entrar', siguiente=request.full_path) }}">Entrar para apartar</a>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+{{ vacio('No hay productos con esos filtros.', 'buscar') }}
+{% endif %}
+{% endblock %}

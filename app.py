@@ -63,9 +63,14 @@ def create_app(config=None):
             if not enviado or not secrets.compare_digest(enviado, session.get("_csrf", "")):
                 abort(400)
 
-    @app.before_request
-    def cargar_usuario():
-        g.usuario = None
+    import auth
+    import rutas_comprador
+    import rutas_tienda
+
+    app.before_request(auth.cargar_usuario)
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(rutas_tienda.bp)
+    app.register_blueprint(rutas_comprador.bp)
 
     @app.context_processor
     def datos_para_todas_las_paginas():
