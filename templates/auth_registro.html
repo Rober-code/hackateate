@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf %}
+{% block titulo %}Crear cuenta{% endblock %}
+{% block cuerpo %}
+<div class="auth">
+  <aside class="auth-lado">
+    <span class="marca-logo">{{ icono('hoja') }}</span>
+    <h2>Súmate al rescate de alimentos</h2>
+    <p>Una sola plataforma para tiendas, compradores y organizaciones.</p>
+    <ul>
+      <li>{{ icono('tienda') }} <span><strong>Tiendas:</strong> registran con foto y el precio baja solo.</span></li>
+      <li>{{ icono('carrito') }} <span><strong>Compradores:</strong> apartan productos a menor precio.</span></li>
+      <li>{{ icono('corazon') }} <span><strong>Organizaciones:</strong> reciben donativos con horario claro.</span></li>
+    </ul>
+  </aside>
+
+  <section class="auth-form">
+    <div class="auth-caja">
+      {% include "_mensajes.html" %}
+      <h1>Crear cuenta</h1>
+      <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.entrar') }}">Entra aquí</a>.</p>
+
+      <form class="formulario form-registro" method="post" action="{{ url_for('auth.registro') }}" data-rol="{{ rol }}">
+        {{ csrf() }}
+        <fieldset style="border: 0; padding: 0; margin: 0;">
+          <legend class="ayuda" style="margin-bottom: 8px;">¿Cómo vas a usar Rescata?</legend>
+          <div class="selector-rol">
+            <input type="radio" name="rol" id="rol-comprador" value="comprador" {% if rol == 'comprador' %}checked{% endif %}>
+            <label for="rol-comprador">{{ icono('carrito') }}Comprador</label>
+            <input type="radio" name="rol" id="rol-tienda" value="tienda" {% if rol == 'tienda' %}checked{% endif %}>
+            <label for="rol-tienda">{{ icono('tienda') }}Tienda</label>
+            <input type="radio" name="rol" id="rol-organizacion" value="organizacion" {% if rol == 'organizacion' %}checked{% endif %}>
+            <label for="rol-organizacion">{{ icono('corazon') }}Organización</label>
+          </div>
+        </fieldset>
+
+        <label class="solo-tienda">Nombre de tu tienda
+          <input name="nombre_negocio" value="{{ datos.get('nombre_negocio', '') }}" placeholder="Ej. Abarrotes Mary">
+        </label>
+        <label class="solo-organizacion">Nombre de tu organización
+          <input name="nombre_organizacion" value="{{ datos.get('nombre_organizacion', '') }}" placeholder="Ej. Comedor comunitario San Juan">
+        </label>
+        <label class="solo-tienda solo-organizacion" id="campo-zona">Colonia o zona
+          <input name="zona" value="{{ datos.get('zona', '') }}" placeholder="Ej. Centro, cerca del campus">
+        </label>
+
+        <label>Tu nombre
+          <input name="nombre" required autocomplete="name" value="{{ datos.get('nombre', '') }}">
+        </label>
+        <label>Correo
+          <input type="email" name="email" required autocomplete="email" value="{{ datos.get('email', '') }}">
+        </label>
+        <div class="campos">
+          <label>Contraseña
+            <input type="password" name="contrasena" required minlength="8" autocomplete="new-password">
+          </label>
+          <label>Confirmar contraseña
+            <input type="password" name="confirmacion" required minlength="8" autocomplete="new-password">
+          </label>
+        </div>
+        <span class="ayuda">Mínimo 8 caracteres. Tu contraseña se guarda cifrada.</span>
+        <button class="btn-grande btn-bloque">Crear cuenta</button>
+      </form>
+    </div>
+  </section>
+</div>
+<script>
+  // Muestra los campos extra según el rol elegido.
+  (function () {
+    const formulario = document.querySelector(".form-registro");
+    const zona = document.getElementById("campo-zona");
+    function actualizar() {
+      const rol = formulario.querySelector("input[name=rol]:checked").value;
+      formulario.dataset.rol = rol;
+      zona.style.display = rol === "comprador" ? "none" : "grid";
+    }
+    formulario.querySelectorAll("input[name=rol]").forEach(function (r) { r.addEventListener("change", actualizar); });
+    actualizar();
+  })();
+</script>
+{% endblock %}

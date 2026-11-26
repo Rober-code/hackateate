@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf, vacio %}
+{% block titulo %}Mis apartados{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Mis apartados</h1>
+    <p>Recoge en la tienda y di tu número de apartado.</p>
+  </div>
+  <a class="btn btn-secundario" href="{{ url_for('comprador.catalogo') }}">{{ icono('buscar') }} Ver más productos</a>
+</div>
+
+{% if apartados %}
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Apartado</th><th>Producto</th><th>Tienda</th><th class="num">Total</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for a in apartados %}
+      <tr>
+        <td><strong>#{{ a.id }}</strong></td>
+        <td>{{ a.producto }}<span class="sub">{{ a.cantidad }} {{ a.unidad }} · caduca el {{ a.fecha_caducidad|fecha }}</span></td>
+        <td>{{ a.tienda }}<span class="sub">{{ a.zona }}</span></td>
+        <td class="num">{{ (a.precio_unitario * a.cantidad)|dinero }}</td>
+        <td>
+          {% if a.estado == 'pendiente' %}<span class="insignia ambar">por recoger</span>
+          {% elif a.estado == 'recogida' %}<span class="insignia verde">{{ icono('check') }} recogido</span>
+          {% else %}<span class="insignia gris">cancelado</span>{% endif %}
+        </td>
+        <td>
+          {% if a.estado == 'pendiente' %}
+          <form method="post" action="{{ url_for('comprador.cancelar', reserva_id=a.id) }}">{{ csrf() }}<button class="btn-chico btn-peligro">Cancelar</button></form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ vacio('Todavía no apartas nada. Busca productos por rescatar.', 'carrito') }}
+{% endif %}
+{% endblock %}

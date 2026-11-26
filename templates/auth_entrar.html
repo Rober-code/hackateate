@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf, nombre_rol %}
+{% block titulo %}Entrar{% endblock %}
+{% block cuerpo %}
+<div class="auth">
+  <aside class="auth-lado">
+    <span class="marca-logo">{{ icono('hoja') }}</span>
+    <h2>Bienvenido de nuevo</h2>
+    <p>Entra para apartar productos, registrar los de tu tienda o recibir donativos.</p>
+    <ul>
+      <li>{{ icono('check') }} Productos en buen estado a menor precio</li>
+      <li>{{ icono('check') }} Menos comida en la basura</li>
+      <li>{{ icono('check') }} Impacto medido en cada tienda</li>
+    </ul>
+  </aside>
+
+  <section class="auth-form">
+    <div class="auth-caja">
+      {% include "_mensajes.html" %}
+      <h1>Entrar a Rescata</h1>
+      <p>¿No tienes cuenta? <a href="{{ url_for('auth.registro') }}">Crea una gratis</a>.</p>
+
+      <form class="formulario" method="post" action="{{ url_for('auth.entrar') }}">
+        {{ csrf() }}
+        <input type="hidden" name="siguiente" value="{{ siguiente }}">
+        <label>Correo
+          <input type="email" name="email" id="email" required autocomplete="email" value="{{ email }}">
+        </label>
+        <label>Contraseña
+          <input type="password" name="contrasena" id="contrasena" required autocomplete="current-password">
+        </label>
+        <button class="btn-grande btn-bloque">Entrar</button>
+      </form>
+
+      {% if cuentas_demo %}
+      <div class="cuentas-demo">
+        <strong>Cuentas de demostración</strong> · contraseña <code>{{ contrasena_demo }}</code>
+        <table>
+          {% for nombre, email, rol, _t, _o in cuentas_demo %}
+          <tr>
+            <td>{{ nombre_rol(rol) }}</td>
+            <td>{{ email }}</td>
+            <td><button type="button" class="btn-chico" data-email="{{ email }}">Usar</button></td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      <script>
+        // Llena el formulario con una cuenta de demostración (solo para la demo).
+        document.querySelectorAll(".cuentas-demo button").forEach(function (boton) {
+          boton.addEventListener("click", function () {
+            document.getElementById("email").value = boton.dataset.email;
+            document.getElementById("contrasena").value = "{{ contrasena_demo }}";
+          });
+        });
+      </script>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

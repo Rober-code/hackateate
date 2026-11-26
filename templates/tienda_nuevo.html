@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf %}
+{% block titulo %}Registrar producto{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Registrar producto</h1>
+    <p>Un registro por producto y fecha de caducidad.</p>
+  </div>
+  {% if tiene('ia.capturar') %}<a class="btn btn-secundario" href="{{ url_for('ia.capturar') }}">{{ icono('camara') }} Mejor con foto o voz</a>{% endif %}
+</div>
+
+<form class="tarjeta formulario" method="post" style="max-width: 680px;">
+  {{ csrf() }}
+  <label>Producto
+    <input name="producto" required placeholder="Ej. Yogur natural 1 L" value="{{ datos.get('producto', '') }}">
+  </label>
+  <div class="campos">
+    <label>Categoría
+      <select name="categoria">
+        {% for c in categorias %}<option {% if datos.get('categoria') == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Cantidad
+      <input name="cantidad" type="number" min="1" required value="{{ datos.get('cantidad', '') }}">
+    </label>
+    <label>Unidad
+      <select name="unidad">
+        {% for u in unidades %}<option {% if datos.get('unidad') == u %}selected{% endif %}>{{ u }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="campos">
+    <label>Precio normal por unidad
+      <input name="precio" type="number" min="0" step="0.5" required placeholder="$" value="{{ datos.get('precio', '') }}">
+    </label>
+    <label>Fecha de caducidad
+      <input name="fecha_caducidad" type="date" required min="{{ hoy.isoformat() }}" value="{{ datos.get('fecha_caducidad', '') }}">
+    </label>
+  </div>
+  <label class="en-linea"><input type="checkbox" name="fecha_estimada" value="1"> La fecha no viene impresa (es una estimación)</label>
+  <div class="acciones">
+    <button>{{ icono('check') }} Guardar producto</button>
+    <a class="btn btn-fantasma" href="{{ url_for('tienda.panel') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

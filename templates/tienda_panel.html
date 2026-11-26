@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf, dias, estado, precio, vacio %}
+{% block titulo %}Panel de la tienda{% endblock %}
+{% block contenido %}
+{% set activos = lotes|rejectattr('estado', 'equalto', 'cerrado')|list %}
+{% set urgentes = lotes|selectattr('estado', 'equalto', 'venta')|selectattr('dias', 'le', 2)|selectattr('cantidad_disponible', 'gt', 0)|list %}
+{% set en_donacion = lotes|selectattr('estado', 'equalto', 'donacion')|selectattr('cantidad_disponible', 'gt', 0)|list %}
+
+<div class="encabezado">
+  <div>
+    <h1>{{ tienda.nombre }}</h1>
+    <p>{{ icono('ubicacion') }} {{ tienda.zona or 'Sin zona registrada' }}</p>
+  </div>
+  <div class="acciones">
+    {% if tiene('ia.capturar') %}<a class="btn" href="{{ url_for('ia.capturar') }}">{{ icono('camara') }} Registrar con foto o voz</a>{% endif %}
+    <a class="btn {% if tiene('ia.capturar') %}btn-secundario{% endif %}" href="{{ url_for('tienda.nuevo') }}">{{ icono('mas') }} Registrar a mano</a>
+    {% if tiene('ia.whatsapp') %}<a class="btn btn-secundario" href="{{ url_for('ia.whatsapp') }}">{{ icono('chat') }} Ofertas por WhatsApp</a>{% endif %}
+  </div>
+</div>
+
+<div class="cifras">
+  <div class="cifra"><div class="cabeza">{{ icono('caja') }} Productos activos</div><div class="valor">{{ activos|length }}</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('reloj') }} Caducan en 2 días o menos</div><div class="valor">{{ urgentes|length }}</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('corazon') }} En donación hoy</div><div class="valor">{{ en_donacion|length }}</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('carrito') }} Apartados por entregar</div><div class="valor">{{ reservas|length }}</div></div>
+</div>
+
+{% if urgentes or en_donacion %}
+<h2 class="titulo-seccion">Alertas de hoy
+  {% if tiene('ia.alerta') %}<a class="btn btn-chico btn-secundario" href="{{ url_for('ia.alerta') }}">{{ icono('chispa') }} Redactar alerta con Gemini</a>{% endif %}
+</h2>
+<div class="rejilla-2">
+  {% if urgentes %}
+  <div class="tarjeta alerta-tarjeta">
+    <div class="rol-icono comprador">{{ icono('alerta') }}</div>
+    <div>
+      <h3>{{ urgentes|length }} producto(s) caducan pronto</h3>
+      <p>{% for l in urgentes %}{{ l.producto }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>
+      <p class="ayuda">Ya tienen el descuento más alto. Si no se venden, el día que caducan pasan a donación.</p>
+    </div>
+  </div>
+  {% endif %}
+  {% if en_donacion %}
+  <div class="tarjeta alerta-tarjeta">
+    <div class="rol-icono organizacion">{{ icono('corazon') }}</div>
+    <div>
+      <h3>{{ en_donacion|length }} producto(s) en donación hoy</h3>
+      <p>{% for l in en_donacion %}{{ l.producto }} ({{ l.cantidad_disponible }} {{ l.unidad }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
+      <p class="ayuda">Las organizaciones ya los ven. Lo que no se recoja hoy se registrará como desechado.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<h2 class="titulo-seccion">Apartados por entregar <span class="contador">{{ reservas|length }}</span></h2>
+{% if reservas %}
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>#</th><th>Producto</th><th class="num">Cantidad</th><th>Quién recoge</th><th>Tipo</th><th></th></tr></thead>
+    <tbody>
+    {% for r in reservas %}
+      <tr>
+        <td><strong>#{{ r.id }}</strong></td>
+        <td>{{ r.producto }}</td>
+        <td class="num">{{ r.cantidad }} {{ r.unidad }}</td>
+        <td>{{ r.receptor }}{% if r.organizacion %}<span class="sub">{{ r.organizacion }}</span>{% endif %}{% if r.hora_recogida %}<span class="sub">{{ icono('reloj') }} {{ r.hora_recogida }}</span>{% endif %}</td>
+        <td>{% if r.tipo == 'compra' %}<span class="insignia verde">compra · {{ (r.precio_unitario * r.cantidad)|dinero }}</span>{% else %}<span class="insignia azul">donación</span>{% endif %}</td>
+        <td>
+          <div class="acciones" style="justify-content: flex-end;">
+            <form method="post" action="{{ url_for('tienda.entregar', reserva_id=r.id) }}">{{ csrf() }}<button class="btn-chico">{{ icono('check') }} Entregado</button></form>
+            <form method="post" action="{{ url_for('tienda.cancelar', reserva_id=r.id) }}">{{ csrf() }}<button class="btn-chico btn-peligro">Cancelar</button></form>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ vacio('No hay apartados pendientes.', 'carrito') }}
+{% endif %}
+
+<h2 class="titulo-seccion">Mis productos <span class="contador">{{ lotes|length }}</span></h2>
+{% if lotes %}
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Producto</th><th>Caducidad</th><th class="num">Disponible</th><th>Precio hoy</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for l in lotes %}
+      <tr>
+        <td><strong>{{ l.producto }}</strong><span class="sub">{{ l.categoria }}{% if l.capturado_con_ia %} · registrado con IA{% endif %}</span></td>
+        <td>{{ l.fecha_caducidad|fecha }}<br>{{ dias(l) }}</td>
+        <td class="num">{{ l.cantidad_disponible }} de {{ l.cantidad_inicial }} {{ l.unidad }}</td>
+        <td>{{ precio(l) }}{% if l.descuento %} <span class="insignia naranja">−{{ l.descuento }} %</span>{% endif %}</td>
+        <td>{{ estado(l) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ vacio('Todavía no registras productos.') }}
+{% endif %}
+{% endblock %}
