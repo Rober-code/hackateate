@@ -66,6 +66,7 @@ def create_app(config=None):
     import auth
     import rutas_comprador
     import rutas_demo
+    import rutas_ia
     import rutas_organizacion
     import rutas_tienda
 
@@ -80,6 +81,7 @@ def create_app(config=None):
     app.register_blueprint(rutas_comprador.bp)
     app.register_blueprint(rutas_organizacion.bp)
     app.register_blueprint(rutas_demo.bp)
+    app.register_blueprint(rutas_ia.bp)
 
     @app.context_processor
     def datos_para_todas_las_paginas():

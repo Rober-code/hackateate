@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf %}
+{% block titulo %}Registrar con IA{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Registrar con foto o con voz</h1>
+    <p>Gemini llena los datos por ti. Tú revisas, pones el precio y confirmas antes de guardar.</p>
+  </div>
+  <a class="btn btn-secundario" href="{{ url_for('tienda.nuevo') }}">{{ icono('mas') }} Prefiero a mano</a>
+</div>
+
+{% if simulado %}
+<ul class="mensajes"><li class="aviso">{{ icono('alerta') }}<span><strong>Modo simulado:</strong> no hay clave de Gemini en el archivo .env (o está activado GEMINI_MOCK). Las respuestas serán de ejemplo.</span></li></ul>
+{% endif %}
+
+<div class="rejilla-2">
+  <form class="tarjeta formulario" method="post" action="{{ url_for('ia.capturar_foto') }}" enctype="multipart/form-data">
+    {{ csrf() }}
+    <div class="alerta-tarjeta">
+      <div class="rol-icono tienda">{{ icono('camara') }}</div>
+      <div><h3>Foto</h3><p>De una etiqueta o del refrigerador completo. En el celular se abre la cámara.</p></div>
+    </div>
+    <input type="file" name="foto" accept="image/*" capture="environment" required>
+    <button>{{ icono('chispa') }} Leer con Gemini</button>
+  </form>
+
+  <form class="tarjeta formulario" method="post" action="{{ url_for('ia.capturar_texto') }}">
+    {{ csrf() }}
+    <div class="alerta-tarjeta">
+      <div class="rol-icono organizacion">{{ icono('micro') }}</div>
+      <div><h3>Dictar o escribir</h3><p>Ej.: "Me sobraron 12 bolillos de hoy y 4 leches que caducan el jueves".</p></div>
+    </div>
+    <textarea name="texto" id="texto" required maxlength="1000" placeholder="Escribe o dicta aquí…"></textarea>
+    <div class="acciones">
+      <button type="button" class="btn-secundario" id="boton-dictar" hidden>{{ icono('micro') }} Empezar a dictar</button>
+      <button>{{ icono('chispa') }} Interpretar con Gemini</button>
+    </div>
+    <p class="ayuda" id="ayuda-dictado">El dictado funciona en Chrome o Edge. En otros navegadores, escribe el texto.</p>
+  </form>
+</div>
+
+<p class="ayuda" style="margin-top: 18px;">{{ icono('escudo') }} Modelo: {{ modelo }}. Las fechas que propone la IA son una ayuda: la tienda decide si un producto está en buen estado.</p>
+<script src="{{ url_for('static', filename='dictado.js') }}"></script>
+{% endblock %}
