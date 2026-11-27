@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf %}
+{% block titulo %}Revisar productos{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Revisa lo que encontró Gemini</h1>
+    <p>Corrige lo que haga falta, escribe el precio normal y guarda. Desmarca lo que no quieras registrar.</p>
+  </div>
+  {% if simulado %}<span class="insignia ambar">{{ icono('alerta') }} respuesta simulada</span>{% else %}<span class="insignia morado">{{ icono('chispa') }} Gemini</span>{% endif %}
+</div>
+
+{% if aviso %}<ul class="mensajes"><li class="aviso">{{ icono('alerta') }}<span>{{ aviso }}</span></li></ul>{% endif %}
+
+<form method="post" action="{{ url_for('ia.guardar') }}">
+  {{ csrf() }}
+  <input type="hidden" name="total" value="{{ productos|length }}">
+  <div class="tabla-envoltura">
+    <table>
+      <thead>
+        <tr><th>Guardar</th><th>Producto</th><th>Categoría</th><th>Cantidad</th><th>Unidad</th><th>Precio normal</th><th>Caducidad</th></tr>
+      </thead>
+      <tbody>
+      {% for p in productos %}{% set i = loop.index0 %}
+        <tr>
+          <td><input type="checkbox" name="incluir_{{ i }}" value="1" {% if not p.caducado %}checked{% endif %} aria-label="Guardar este producto"></td>
+          <td>
+            <input class="ancho" name="producto_{{ i }}" value="{{ p.producto }}" required>
+            {% if p.nota %}<span class="sub">{{ icono('chispa') }} {{ p.nota }}</span>{% endif %}
+            {% if p.error %}<span class="insignia rojo" style="margin-top: 6px;">{{ p.error }}</span>{% endif %}
+            {% if p.caducado %}<span class="insignia rojo" style="margin-top: 6px;">Ya caducó: no se publica</span>{% endif %}
+          </td>
+          <td><select name="categoria_{{ i }}">{% for c in categorias %}<option {% if p.categoria == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></td>
+          <td><input class="corto" name="cantidad_{{ i }}" type="number" min="1" value="{{ p.cantidad }}" required></td>
+          <td><select class="medio" name="unidad_{{ i }}">{% for u in unidades %}<option {% if p.unidad == u %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></td>
+          <td><input class="corto" name="precio_{{ i }}" type="number" min="0" step="0.5" value="{{ p.precio }}" placeholder="$" required></td>
+          <td>
+            <input name="fecha_caducidad_{{ i }}" type="date" value="{{ p.fecha_caducidad }}" required>
+            <label class="en-linea ayuda" style="margin-top: 4px;"><input type="checkbox" name="fecha_estimada_{{ i }}" value="1" {% if p.fecha_estimada %}checked{% endif %}> estimada</label>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="ayuda">"Estimada" significa que la fecha no venía impresa. Revísala: la tienda decide si el producto está en buen estado.</p>
+  <div class="acciones">
+    <button>{{ icono('check') }} Guardar productos marcados</button>
+    <a class="btn btn-secundario" href="{{ url_for('ia.capturar') }}">Volver a intentar</a>
+  </div>
+</form>
+{% endblock %}

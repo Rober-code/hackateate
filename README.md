@@ -2,11 +2,11 @@
 
 Página web para que las tiendas de barrio vendan con descuento o donen sus productos antes de que caduquen.
 
-> Versión 0.3: escalera de rescate completa (descuentos por etapas, donación a organizaciones, cierre), tablero de impacto y ajustes de la tienda.
+> Versión 0.4: Gemini registra productos desde una foto o un dictado, redacta alertas, mensajes de WhatsApp y recomendaciones.
 
 Cuentas de demostración (contraseña `rescata123`): `tienda@demo.mx`, `panaderia@demo.mx`, `comprador@demo.mx`, `comedor@demo.mx`.
 
-Cómo funciona lo que agrega esta versión: [`docs/guias/v0.3.md`](docs/guias/v0.3.md).
+Cómo funciona lo que agrega esta versión: [`docs/guias/v0.4.md`](docs/guias/v0.4.md).
 
 ## Cómo ejecutarlo
 

@@ -1,5 +1,14 @@
 # Cambios por versión
 
+## v0.4 · Gemini en la tienda
+- Registro con foto (una etiqueta o el refrigerador completo): Gemini devuelve la lista de productos con fecha en JSON (salida estructurada) y la tienda la revisa antes de guardar.
+- Registro por dictado o texto ("me sobraron 12 bolillos y 4 leches").
+- Fechas estimadas para productos sin fecha impresa, siempre marcadas como "estimada".
+- Alerta del día, mensaje de ofertas para WhatsApp (enlace wa.me) y recomendaciones a partir del tablero de impacto.
+- Modo simulado: sin clave, con GEMINI_MOCK=true o si Gemini falla, la app sigue funcionando y avisa el motivo en pantalla.
+- Reintento si Google está saturado, modelo de respaldo (GEMINI_MODEL_RESPALDO) y una sola conexión que se reabre si se cierra.
+- `probar_gemini.py`: diagnóstico de la clave, del modelo y de los errores.
+
 ## v0.3 · Escalera de rescate
 - Descuento automático según los días que faltan: 20 % de 3 a 5 días y 40 % con 1 o 2 días.
 - Ajustes de la tienda: nombre, zona y porcentajes de descuento (validados).
