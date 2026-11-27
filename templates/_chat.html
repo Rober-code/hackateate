@@ -1,0 +1,34 @@
+{% from "_componentes.html" import icono %}
+{# Asistente de dudas: botón flotante y ventana de chat. La lógica está en static/chat.js #}
+{% if not usuario %}
+  {% set sugerencias = ['¿Cómo funciona Rescata?', '¿Cómo creo una cuenta?', '¿Qué productos hay hoy?'] %}
+{% elif usuario.rol == 'comprador' %}
+  {% set sugerencias = ['¿Cómo aparto un producto?', '¿Qué lácteos hay?', '¿Cómo funcionan los descuentos?'] %}
+{% elif usuario.rol == 'tienda' %}
+  {% set sugerencias = ['¿Cómo registro con foto?', '¿Qué productos me caducan pronto?', '¿Cómo cambio mis descuentos?'] %}
+{% else %}
+  {% set sugerencias = ['¿Qué donativos hay hoy?', '¿Cómo aparto un donativo?', '¿Qué pasa si no recojo?'] %}
+{% endif %}
+
+<button class="chat-boton" id="chat-boton" aria-expanded="false" aria-controls="chat-panel">
+  {{ icono('chat') }}<span class="texto">¿Dudas? Pregúntanos</span>
+</button>
+
+<section class="chat-panel" id="chat-panel" hidden aria-label="Asistente de Rescata">
+  <header class="chat-cabeza">
+    <span class="marca-logo">{{ icono('chispa') }}</span>
+    <div><div class="titulo">Asistente Rescata</div><div class="sub">Responde con Gemini · puede equivocarse</div></div>
+    <button type="button" id="chat-cerrar" aria-label="Cerrar">{{ icono('cerrar') }}</button>
+  </header>
+  <div class="chat-mensajes" id="chat-mensajes" aria-live="polite">
+    <div class="burbuja bot">¡Hola{% if usuario %}, {{ usuario.nombre.split(' ')[0] }}{% endif %}! Soy el asistente de Rescata. ¿En qué te ayudo?</div>
+  </div>
+  <div class="chat-sugerencias" id="chat-sugerencias">
+    {% for s in sugerencias %}<button type="button">{{ s }}</button>{% endfor %}
+  </div>
+  <form class="chat-form" id="chat-form" data-url="{{ url_for('chat.mensaje') }}">
+    <input id="chat-texto" maxlength="500" placeholder="Escribe tu pregunta…" autocomplete="off" aria-label="Tu pregunta">
+    <button aria-label="Enviar">{{ icono('enviar') }}</button>
+  </form>
+</section>
+<script src="{{ url_for('static', filename='chat.js') }}"></script>

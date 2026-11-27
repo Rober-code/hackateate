@@ -1,5 +1,12 @@
 # Cambios por versión
 
+## v0.5 · Asistente de dudas
+- Chat flotante en todas las páginas, para visitantes, compradores, tiendas y organizaciones.
+- Gemini responde con el contexto de Rescata, el rol de quien pregunta y los productos disponibles hoy.
+- Reglas en las instrucciones: no inventar productos ni precios, no certificar que un alimento es apto, no pedir datos personales.
+- Preguntas sugeridas según el rol, límite de 40 preguntas por sesión y respuestas de ejemplo en modo simulado.
+- Si Gemini no responde, la respuesta muestra el motivo en una nota.
+
 ## v0.4 · Gemini en la tienda
 - Registro con foto (una etiqueta o el refrigerador completo): Gemini devuelve la lista de productos con fecha en JSON (salida estructurada) y la tienda la revisa antes de guardar.
 - Registro por dictado o texto ("me sobraron 12 bolillos y 4 leches").
