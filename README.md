@@ -153,19 +153,15 @@ Explicación archivo por archivo, para defender el proyecto: [`docs/como-funcion
 
 | Integrante | Rol | Perfil de GitHub |
 | --- | --- | --- |
-| [COMPLETAR] | Producto e investigación | |
-| [COMPLETAR] | Frontend (pantallas) | |
-| [COMPLETAR] | Backend y base de datos | |
-| [COMPLETAR] | Gemini e integración | |
-| [COMPLETAR] | Negocio y presentación | |
+| Felix | Bases de datos y estructura | Felix-Bkr-09|
+| Santiago | Frontend (pantallas) |santizzdx |
+| Roberto | Backend y Gemini |Rober-code |
+| Yazid | Cahtbot |yazidwong8 |
+| Brandon | Negocio y presentación | Lando-PV |
 
-**Uso de IA en el desarrollo:** [COMPLETAR: declaren con honestidad qué herramientas de IA usaron para programar y documentar, y qué hizo el equipo.]
+**Uso de IA en el desarrollo:** Uso de Claude Code
 
-## 10. Plan de negocio
-
-[`docs/plan-negocio.md`](docs/plan-negocio.md)
-
-## 11. Limitaciones y próximos pasos
+## 10. Limitaciones y próximos pasos
 
 - Prototipo local: falta publicarlo en internet con una base de datos de producción.
 - No hay recuperación de contraseña ni verificación de correo.
