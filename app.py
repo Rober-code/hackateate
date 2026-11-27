@@ -64,6 +64,7 @@ def create_app(config=None):
                 abort(400)
 
     import auth
+    import rutas_chat
     import rutas_comprador
     import rutas_demo
     import rutas_ia
@@ -82,6 +83,7 @@ def create_app(config=None):
     app.register_blueprint(rutas_organizacion.bp)
     app.register_blueprint(rutas_demo.bp)
     app.register_blueprint(rutas_ia.bp)
+    app.register_blueprint(rutas_chat.bp)
 
     @app.context_processor
     def datos_para_todas_las_paginas():

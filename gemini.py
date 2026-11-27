@@ -8,6 +8,7 @@ Usos:
   3. redactar_alerta()  aviso del día para la tienda
   4. mensaje_ofertas()  mensaje para compartir por WhatsApp
   5. recomendaciones()  resumen del tablero de impacto en lenguaje sencillo
+  6. responder_chat()   asistente que resuelve dudas de cualquier usuario
 
 Modo simulado: si no hay GEMINI_API_KEY en el archivo .env, o si GEMINI_MOCK=true, se usan
 respuestas guardadas. También se usa si Gemini falla (sin internet, sin cuota). La pantalla
@@ -334,3 +335,110 @@ def recomendaciones(tienda, datos):
 
     return _con_respaldo(llamada, respaldo)
 
+
+# ------------------------------------------------------------------ 6. asistente (chatbot)
+
+INSTRUCCIONES_CHAT = """Eres "Asistente Rescata", el asistente de la página web Rescata.
+Responde en español de México, en máximo 6 líneas, con tono amable y claro. No uses markdown (ni ** ni #).
+
+Qué es Rescata: una página para que las tiendas de barrio vendan con descuento o donen sus productos antes de que caduquen.
+Escalera de rescate de cada producto:
+- Más de 5 días para caducar: precio normal.
+- De 3 a 5 días: primer descuento (20 % por defecto; cada tienda puede cambiarlo en Ajustes).
+- 1 o 2 días: descuento mayor (40 % por defecto).
+- El día que caduca: ya no se vende; se ofrece a organizaciones (comedores, albergues) que lo apartan con hora de recogida.
+- Ya caducado: se cierra y lo que quedó se registra como desechado. El tablero de impacto muestra lo vendido, donado y desechado.
+
+Qué puede hacer cada tipo de cuenta:
+- Comprador: buscar en "Productos" con filtros, apartar (necesita cuenta de comprador), ver "Mis apartados", recoger en la tienda diciendo su número de apartado y cancelar si sigue pendiente. Cualquiera puede ver los productos sin cuenta.
+- Tienda: registrar productos con foto o voz (Gemini llena los datos y la tienda confirma) o a mano, ver alertas, marcar apartados como entregados, compartir ofertas por WhatsApp, ver su impacto y cambiar descuentos en Ajustes.
+- Organización: ver donativos del día, apartarlos con hora de recogida y ver "Mis donativos".
+Para crear cuenta: botón "Crear cuenta", elegir comprador, tienda u organización.
+
+Reglas que siempre sigues:
+- Usa solo la información de este texto y de los datos de abajo. Si no lo sabes, dilo y sugiere preguntar directamente a la tienda.
+- No inventes productos, precios, tiendas, horarios ni cifras.
+- No afirmes que un alimento es seguro para comer: eso lo decide la tienda, y la persona revisa el producto al recogerlo.
+- Si preguntan algo que no tiene que ver con Rescata o con aprovechar alimentos, responde amablemente que solo puedes ayudar con Rescata.
+- Nunca pidas contraseñas ni datos personales.
+
+Persona que pregunta: {quien}
+Hoy es {hoy}.
+
+Productos a la venta ahora:
+{catalogo}
+
+Productos en donación hoy:
+{donacion}
+{extra}"""
+
+
+def _lineas_catalogo(lotes, limite=25):
+    if not lotes:
+        return "(ninguno)"
+    return "\n".join(
+        f"- {l['producto']} en {l['tienda']} ({l['zona']}): {l['precio_actual']:.2f} pesos por {l['unidad']}"
+        f"{' con ' + str(l['descuento']) + ' % de descuento' if l['descuento'] else ''}, "
+        f"quedan {l['cantidad_disponible']}, faltan {l['dias']} día(s)"
+        for l in lotes[:limite]
+    )
+
+
+def responder_chat(mensaje, historial, contexto):
+    """Responde una pregunta con el contexto de Rescata, el catálogo y el rol de quien pregunta.
+
+    historial: lista de {"rol": "persona"|"asistente", "texto": "..."} con los últimos mensajes.
+    contexto: {"quien", "hoy", "catalogo", "donacion", "extra"}.
+    """
+    def llamada():
+        prompt = INSTRUCCIONES_CHAT.format(
+            quien=contexto["quien"], hoy=contexto["hoy"],
+            catalogo=_lineas_catalogo(contexto["catalogo"]),
+            donacion=_lineas_catalogo(contexto["donacion"]),
+            extra=contexto.get("extra", ""),
+        )
+        conversacion = "\n".join(
+            f"{'Persona' if m['rol'] == 'persona' else 'Asistente'}: {m['texto']}" for m in historial
+        )
+        return _pedir_texto(f"{prompt}\n\nConversación:\n{conversacion}\nPersona: {mensaje}\nAsistente:")
+
+    return _con_respaldo(llamada, lambda: _respuesta_frecuente(mensaje, contexto))
+
+
+def _respuesta_frecuente(mensaje, contexto):
+    """Respuestas de ejemplo para el modo simulado, buscando palabras clave."""
+    texto = " " + mensaje.lower() + " "
+
+    def tiene(*palabras):
+        return any(p in texto for p in palabras)
+
+    if tiene("hola", "buenas", "buenos"):
+        return "¡Hola! Soy el asistente de Rescata. Puedo explicarte cómo apartar, cómo funcionan los descuentos o qué productos hay hoy. ¿En qué te ayudo?"
+    if tiene("cuenta", "registr", "inscrib", "crear"):
+        return "Pulsa \"Crear cuenta\" arriba a la derecha y elige si eres comprador, tienda u organización. Solo necesitas tu nombre, correo y una contraseña de al menos 8 caracteres."
+    if tiene("apart", "reserv", "recog", "recojo", "comprar"):
+        return ("Entra con tu cuenta de comprador, ve a \"Productos\", elige la cantidad y pulsa \"Apartar\". "
+                "Te damos un número de apartado: dilo en la tienda al recoger. Si cambias de opinión, cancélalo en \"Mis apartados\".")
+    if tiene("descuento", "precio", "barato", "cuesta"):
+        return ("El precio baja solo conforme se acerca la fecha: normal con más de 5 días, 20 % de descuento de 3 a 5 días "
+                "y 40 % con 1 o 2 días. Cada tienda puede ajustar sus porcentajes.")
+    if tiene("donac", "donar", "donat", "organiza", "comedor", "albergue"):
+        return ("El día que un producto caduca deja de venderse y se ofrece a organizaciones. Con una cuenta de organización "
+                "lo apartas en \"Donativos\" eligiendo la hora de recogida.")
+    if tiene("foto", "gemini", " ia", "inteligencia", "voz", "dict"):
+        return ("Las tiendas pueden registrar productos con una foto o dictando. Gemini propone los datos y la tienda los "
+                "revisa y pone el precio antes de guardar.")
+    if tiene("segur", "apto", "enferm", "malo", "buen estado"):
+        return ("La app no certifica que un alimento sea apto: lo decide la tienda, y tú puedes revisarlo al recogerlo. "
+                "Si tienes dudas sobre un producto, pregunta directamente en la tienda.")
+    disponibles = contexto["catalogo"]
+    coincidencias = [l for l in disponibles if any(pal in l["producto"].lower() or pal in l["categoria"].lower()
+                                                   for pal in texto.split() if len(pal) > 3)]
+    if coincidencias or tiene("hay", "disponible", "producto", "qué tienen", "que tienen"):
+        lista = coincidencias or disponibles
+        if not lista:
+            return "Ahora mismo no hay productos a la venta. Vuelve más tarde o revisa la sección \"Productos\"."
+        lineas = [f"• {l['producto']} en {l['tienda']}: ${l['precio_actual']:.2f}" for l in lista[:5]]
+        return "Esto hay ahora:\n" + "\n".join(lineas) + "\nPuedes apartarlo en \"Productos\"."
+    return ("Puedo ayudarte con cómo apartar, cómo funcionan los descuentos y donaciones, cómo crear tu cuenta "
+            "o qué productos hay hoy. ¿Qué te gustaría saber?")
