@@ -1,5 +1,11 @@
 # Cambios por versión
 
+## v1.0 · Entrega
+- README completo: problema, usuarios, solución, decisiones, tecnologías, instalación, cuentas de demostración, qué es simulado y limitaciones.
+- Documentación para el equipo: cómo funciona cada archivo, guion de la demo, alternativas y decisiones, plan de negocio.
+- Capturas de pantalla en `docs/capturas/`.
+- Ajustes visuales menores.
+
 ## v0.5 · Asistente de dudas
 - Chat flotante en todas las páginas, para visitantes, compradores, tiendas y organizaciones.
 - Gemini responde con el contexto de Rescata, el rol de quien pregunta y los productos disponibles hoy.
