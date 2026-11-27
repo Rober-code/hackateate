@@ -33,6 +33,60 @@ def dias_restantes(fecha_caducidad, hoy):
     return (date.fromisoformat(fecha_caducidad) - hoy).days
 
 
+# ------------------------------------------------------------- escalera de rescate
+#
+#   más de 5 días  -> precio normal
+#   3 a 5 días     -> descuento_3_5 (por defecto 20 %)
+#   1 a 2 días     -> descuento_1_2 (por defecto 40 %)
+#   día que caduca -> ya no se vende: se ofrece a organizaciones (donación)
+#   ya caducó      -> se cierra; lo que quedó se registra como desechado
+#
+# Los porcentajes son un EJEMPLO para validar con las tiendas; cada tienda puede cambiarlos.
+
+def porcentaje_descuento(dias, descuento_3_5=20, descuento_1_2=40):
+    if dias > 5:
+        return 0
+    if dias >= 3:
+        return descuento_3_5
+    if dias >= 1:
+        return descuento_1_2
+    return 0  # el día que caduca ya no se vende
+
+
+def precio_con_descuento(precio, porcentaje):
+    return round(precio * (100 - porcentaje) / 100, 2)
+
+
+def estado_por_fecha(dias):
+    """En qué escalón debe estar un lote según los días que le quedan."""
+    if dias >= 1:
+        return "venta"
+    if dias == 0:
+        return "donacion"
+    return "cerrado"
+
+
+def porcentaje_rescatado(vendido, donado, desechado):
+    """De todo lo que ya tuvo un final, qué porcentaje se vendió o se donó."""
+    total = vendido + donado + desechado
+    if total == 0:
+        return None
+    return round(100 * (vendido + donado) / total)
+
+
+def validar_descuentos(texto_3_5, texto_1_2):
+    """Los descuentos van de 0 a 90 % y el de 1-2 días no puede ser menor que el de 3-5 días."""
+    try:
+        d35, d12 = int(texto_3_5), int(texto_1_2)
+    except (TypeError, ValueError):
+        raise ErrorRegla("Los descuentos deben ser números enteros.")
+    if not (0 <= d35 <= 90 and 0 <= d12 <= 90):
+        raise ErrorRegla("Los descuentos deben estar entre 0 y 90 %.")
+    if d12 < d35:
+        raise ErrorRegla("El descuento de 1 o 2 días debe ser igual o mayor que el de 3 a 5 días.")
+    return d35, d12
+
+
 # ------------------------------------------------------------- validaciones
 
 def validar_cantidad(texto):

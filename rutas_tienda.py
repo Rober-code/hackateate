@@ -27,6 +27,31 @@ def panel():
     )
 
 
+@bp.route("/impacto")
+@requiere_rol("tienda")
+def impacto():
+    con = get_db()
+    return render_template(
+        "tienda_impacto.html",
+        tienda=servicio.obtener_tienda(con, tienda_id()),
+        datos=servicio.impacto(con, tienda_id()),
+    )
+
+
+@bp.route("/ajustes", methods=["GET", "POST"])
+@requiere_rol("tienda")
+def ajustes():
+    con = get_db()
+    if request.method == "POST":
+        try:
+            servicio.guardar_ajustes(con, tienda_id(), request.form)
+            flash("Ajustes guardados. Los precios ya usan los nuevos descuentos.", "exito")
+            return redirect(url_for("tienda.panel"))
+        except ErrorRegla as error:
+            flash(str(error), "error")
+    return render_template("tienda_ajustes.html", tienda=servicio.obtener_tienda(con, tienda_id()))
+
+
 @bp.route("/nuevo", methods=["GET", "POST"])
 @requiere_rol("tienda")
 def nuevo():

@@ -65,12 +65,21 @@ def create_app(config=None):
 
     import auth
     import rutas_comprador
+    import rutas_demo
+    import rutas_organizacion
     import rutas_tienda
+
+    @app.before_request
+    def aplicar_escalera():
+        """En cada visita, cada producto pasa al escalón que le toca según su fecha."""
+        servicio.actualizar_estados(db.get_db())
 
     app.before_request(auth.cargar_usuario)
     app.register_blueprint(auth.bp)
     app.register_blueprint(rutas_tienda.bp)
     app.register_blueprint(rutas_comprador.bp)
+    app.register_blueprint(rutas_organizacion.bp)
+    app.register_blueprint(rutas_demo.bp)
 
     @app.context_processor
     def datos_para_todas_las_paginas():

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf, dias, vacio %}
+{% block titulo %}Donativos{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Donativos disponibles hoy</h1>
+    <p>{{ usuario.organizacion }} · Productos que caducan hoy y que las tiendas ofrecen para donar. Aparta lo que puedas recoger.</p>
+  </div>
+</div>
+
+{% if lotes %}
+<div class="rejilla">
+  {% for l in lotes %}
+  <article class="producto">
+    <div class="arriba">
+      <div>
+        <div class="categoria">{{ l.categoria }}</div>
+        <h3>{{ l.producto }}</h3>
+      </div>
+      {{ dias(l) }}
+    </div>
+    <div class="tienda">{{ icono('tienda') }} {{ l.tienda }} · {{ l.zona }}</div>
+    <div class="precio-fila">
+      <span><span class="precio-ahora">{{ l.cantidad_disponible }}</span> <span class="unidad">{{ l.unidad }} disponibles</span></span>
+      <span class="insignia azul">{{ icono('corazon') }} donación</span>
+    </div>
+    <form method="post" action="{{ url_for('organizacion.aceptar', lote_id=l.id) }}" style="flex-wrap: wrap;">
+      {{ csrf() }}
+      <input name="cantidad" type="number" min="1" max="{{ l.cantidad_disponible }}" value="{{ l.cantidad_disponible }}" required aria-label="Cantidad">
+      <input name="hora" type="time" required aria-label="Hora de recogida" style="flex: 1;">
+      <input name="nombre" placeholder="Quién recoge" value="{{ usuario.nombre }}" aria-label="Quién recoge" style="flex-basis: 100%;">
+      <button>{{ icono('check') }} Apartar donativo</button>
+    </form>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+{{ vacio('Hoy no hay donativos disponibles. En la demo, prueba con "Avanzar 1 día" en la barra amarilla.', 'corazon') }}
+{% endif %}
+
+<h2 class="titulo-seccion">Mis donativos <span class="contador">{{ donativos|length }}</span></h2>
+{% if donativos %}
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>#</th><th>Producto</th><th class="num">Cantidad</th><th>Tienda</th><th>Recoge</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for d in donativos %}
+      <tr>
+        <td><strong>#{{ d.id }}</strong></td>
+        <td>{{ d.producto }}</td>
+        <td class="num">{{ d.cantidad }} {{ d.unidad }}</td>
+        <td>{{ d.tienda }}<span class="sub">{{ d.zona }}</span></td>
+        <td>{{ d.receptor }}<span class="sub">{{ icono('reloj') }} {{ d.hora_recogida }}</span></td>
+        <td>
+          {% if d.estado == 'pendiente' %}<span class="insignia ambar">por recoger</span>
+          {% elif d.estado == 'recogida' %}<span class="insignia verde">{{ icono('check') }} recibido</span>
+          {% else %}<span class="insignia gris">cancelado</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ vacio('Todavía no apartas donativos.', 'caja') }}
+{% endif %}
+{% endblock %}
