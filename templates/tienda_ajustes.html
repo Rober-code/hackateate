@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, csrf %}
+{% block titulo %}Ajustes de la tienda{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Ajustes de la tienda</h1>
+    <p>Datos de tu tienda y los descuentos de tu escalera de rescate.</p>
+  </div>
+</div>
+
+<form class="tarjeta formulario" method="post" style="max-width: 680px;">
+  {{ csrf() }}
+  <div class="campos">
+    <label>Nombre de la tienda
+      <input name="nombre" required value="{{ tienda.nombre }}">
+    </label>
+    <label>Colonia o zona
+      <input name="zona" value="{{ tienda.zona }}">
+    </label>
+  </div>
+  <div class="campos">
+    <label>Descuento cuando faltan 3 a 5 días (%)
+      <input name="descuento_3_5" type="number" min="0" max="90" required value="{{ tienda.descuento_3_5 }}">
+    </label>
+    <label>Descuento cuando faltan 1 o 2 días (%)
+      <input name="descuento_1_2" type="number" min="0" max="90" required value="{{ tienda.descuento_1_2 }}">
+    </label>
+  </div>
+  <p class="ayuda">Con más de 5 días el precio es normal. El día que caduca, el producto deja de venderse y se ofrece para donación.</p>
+  <div class="acciones">
+    <button>{{ icono('check') }} Guardar ajustes</button>
+    <a class="btn btn-fantasma" href="{{ url_for('tienda.panel') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

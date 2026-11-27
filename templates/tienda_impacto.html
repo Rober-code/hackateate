@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import icono, vacio %}
+{% block titulo %}Impacto{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Impacto de {{ tienda.nombre }}</h1>
+    <p>Qué pasó con los productos que ya terminaron su recorrido. <span class="insignia ambar">datos de demostración</span></p>
+  </div>
+  {% if tiene('ia.recomendaciones') %}<a class="btn" href="{{ url_for('ia.recomendaciones') }}">{{ icono('chispa') }} Recomendaciones de Gemini</a>{% endif %}
+</div>
+
+<div class="cifras">
+  <div class="cifra destacada">
+    <div class="cabeza">{{ icono('hoja') }} Rescatado</div>
+    <div class="valor">{% if datos.porcentaje is not none %}{{ datos.porcentaje }} %{% else %}—{% endif %}</div>
+    <div class="nota">vendido o donado, del total con resultado</div>
+  </div>
+  <div class="cifra"><div class="cabeza">{{ icono('etiqueta') }} Vendido con descuento</div><div class="valor">{{ datos.vendido }}</div><div class="nota">unidades</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('corazon') }} Donado</div><div class="valor">{{ datos.donado }}</div><div class="nota">unidades</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('alerta') }} Desechado</div><div class="valor">{{ datos.desechado }}</div><div class="nota">unidades</div></div>
+  <div class="cifra"><div class="cabeza">{{ icono('dinero') }} Dinero recuperado</div><div class="valor">{{ datos.dinero|dinero }}</div><div class="nota">por ventas con descuento</div></div>
+</div>
+
+{% if datos.con_final %}
+<div class="tarjeta" style="margin-top: 16px;">
+  <strong>¿Qué pasó con cada unidad?</strong>
+  <p class="ayuda" style="margin-top: 2px;">{{ datos.con_final }} unidades con resultado · {{ datos.en_curso }} todavía en la escalera</p>
+  <div class="barra-impacto" role="img" aria-label="{{ datos.vendido }} vendidas, {{ datos.donado }} donadas, {{ datos.desechado }} desechadas">
+    <span class="vendido" style="width: {{ 100 * datos.vendido / datos.con_final }}%"></span>
+    <span class="donado" style="width: {{ 100 * datos.donado / datos.con_final }}%"></span>
+    <span class="desechado" style="width: {{ 100 * datos.desechado / datos.con_final }}%"></span>
+  </div>
+  <div class="leyenda">
+    <span><i style="background: var(--verde-500)"></i>Vendido {{ datos.vendido }}</span>
+    <span><i style="background: var(--azul-600)"></i>Donado {{ datos.donado }}</span>
+    <span><i style="background: var(--rojo-600)"></i>Desechado {{ datos.desechado }}</span>
+  </div>
+</div>
+
+<h2 class="titulo-seccion">Por categoría</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Categoría</th><th class="num">Vendido</th><th class="num">Donado</th><th class="num">Desechado</th></tr></thead>
+    <tbody>
+    {% for c in datos.por_categoria %}
+      <tr><td>{{ c.categoria }}</td><td class="num">{{ c.vendido }}</td><td class="num">{{ c.donado }}</td><td class="num">{{ c.desechado }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="margin-top: 16px;">{{ vacio('Todavía ningún producto ha terminado su recorrido. Entrega apartados o usa "Avanzar 1 día".', 'grafica') }}</div>
+{% endif %}
+
+<p class="ayuda" style="margin-top: 20px;">Cómo se calcula: % rescatado = (vendido + donado) ÷ (vendido + donado + desechado), en unidades. Un apartado cuenta hasta que la tienda confirma la entrega.</p>
+{% endblock %}

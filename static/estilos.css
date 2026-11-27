@@ -327,7 +327,7 @@ textarea { min-height: 110px; resize: vertical; }
 
 /* Estados vacíos y cajas */
 .vacio { text-align: center; padding: 36px 20px; color: var(--tinta-3); background: var(--blanco); border: 1px dashed var(--borde-2); border-radius: var(--radio); }
-.vacio .icono { width: 30px; height: 30px; margin: 0 auto 8px; color: var(--borde-2); }
+.vacio .icono { display: block; width: 30px; height: 30px; margin: 0 auto 8px; color: var(--borde-2); }
 .caja-ia { background: linear-gradient(180deg, #faf5ff, var(--blanco)); border: 1px solid #ddd6fe; border-radius: var(--radio); padding: 20px; white-space: pre-line; }
 .alerta-tarjeta { display: flex; gap: 14px; align-items: flex-start; }
 .alerta-tarjeta .rol-icono { width: 42px; height: 42px; border-radius: 12px; }

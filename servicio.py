@@ -116,11 +116,13 @@ def obtener_tienda(con, tienda_id):
 
 
 def enriquecer(lote, fecha_hoy):
-    """Convierte una fila de la base en diccionario y le agrega datos calculados."""
+    """Convierte una fila de la base en diccionario y le agrega días restantes, descuento y precio de hoy."""
     datos = dict(lote)
     datos["dias"] = reglas.dias_restantes(datos["fecha_caducidad"], fecha_hoy)
-    datos["descuento"] = 0
-    datos["precio_actual"] = datos["precio_original"]
+    datos["descuento"] = reglas.porcentaje_descuento(
+        datos["dias"], datos.get("descuento_3_5", 20), datos.get("descuento_1_2", 40)
+    )
+    datos["precio_actual"] = reglas.precio_con_descuento(datos["precio_original"], datos["descuento"])
     return datos
 
 
@@ -285,3 +287,133 @@ def apartados_de_usuario(con, usuario_id):
            ORDER BY r.estado != 'pendiente', r.creada_en DESC""",
         (usuario_id,),
     ).fetchall()
+
+
+# ---------------------------------------------------------------- escalera de rescate
+
+def lotes_en_donacion(con):
+    filas = con.execute(
+        SELECT_LOTES + " WHERE l.estado = 'donacion' AND l.cantidad_disponible > 0 ORDER BY l.producto"
+    ).fetchall()
+    fecha_hoy = hoy(con)
+    return [enriquecer(f, fecha_hoy) for f in filas]
+
+
+def cerrar_lote(con, lote_id):
+    """Cierra un lote caducado: cancela lo que nadie recogió y registra el resto como desechado."""
+    pendientes = con.execute(
+        "SELECT id, cantidad FROM reservas WHERE lote_id = ? AND estado = 'pendiente'", (lote_id,)
+    ).fetchall()
+    for reserva in pendientes:
+        con.execute("UPDATE reservas SET estado = 'cancelada' WHERE id = ?", (reserva["id"],))
+        con.execute(
+            "UPDATE lotes SET cantidad_disponible = cantidad_disponible + ? WHERE id = ?",
+            (reserva["cantidad"], lote_id),
+        )
+    sobrante = con.execute("SELECT cantidad_disponible FROM lotes WHERE id = ?", (lote_id,)).fetchone()[0]
+    if sobrante > 0:
+        con.execute(
+            "INSERT INTO resultados (lote_id, destino, cantidad, monto, fecha) VALUES (?, 'desechado', ?, 0, ?)",
+            (lote_id, sobrante, hoy(con).isoformat()),
+        )
+    con.execute("UPDATE lotes SET estado = 'cerrado', cantidad_disponible = 0 WHERE id = ?", (lote_id,))
+    return sobrante
+
+
+def actualizar_estados(con):
+    """Mueve cada lote al escalón que le toca según la fecha. Se ejecuta en cada visita.
+
+    Devuelve un resumen: cuántos pasaron a donación, cuántos se cerraron y cuántas unidades se desecharon.
+    """
+    resumen = {"a_donacion": 0, "cerrados": 0, "desechadas": 0}
+    fecha_hoy = hoy(con)
+    for lote in con.execute("SELECT * FROM lotes WHERE estado != 'cerrado'").fetchall():
+        nuevo = reglas.estado_por_fecha(reglas.dias_restantes(lote["fecha_caducidad"], fecha_hoy))
+        if nuevo == lote["estado"]:
+            continue
+        if nuevo == "donacion":
+            con.execute("UPDATE lotes SET estado = 'donacion' WHERE id = ?", (lote["id"],))
+            resumen["a_donacion"] += 1
+        elif nuevo == "cerrado":
+            resumen["desechadas"] += cerrar_lote(con, lote["id"])
+            resumen["cerrados"] += 1
+    con.commit()
+    return resumen
+
+
+def avanzar_dias(con, dias=1):
+    """Solo para la demo: adelanta el reloj y aplica la escalera."""
+    con.execute(
+        "UPDATE config SET valor = CAST(valor AS INTEGER) + ? WHERE clave = 'dias_simulados'", (dias,)
+    )
+    con.commit()
+    return actualizar_estados(con)
+
+
+def guardar_ajustes(con, tienda_id, formulario):
+    nombre = (formulario.get("nombre") or "").strip()
+    if not nombre:
+        raise ErrorRegla("Escribe el nombre de la tienda.")
+    d35, d12 = reglas.validar_descuentos(formulario.get("descuento_3_5"), formulario.get("descuento_1_2"))
+    con.execute(
+        "UPDATE tiendas SET nombre = ?, zona = ?, descuento_3_5 = ?, descuento_1_2 = ? WHERE id = ?",
+        (nombre, (formulario.get("zona") or "").strip(), d35, d12, tienda_id),
+    )
+    con.commit()
+
+
+def donativos_de_organizacion(con, organizacion_id):
+    return con.execute(
+        """SELECT r.*, l.producto, l.unidad, t.nombre AS tienda, t.zona AS zona
+           FROM reservas r JOIN lotes l ON l.id = r.lote_id JOIN tiendas t ON t.id = l.tienda_id
+           WHERE r.organizacion_id = ?
+           ORDER BY r.estado != 'pendiente', r.creada_en DESC""",
+        (organizacion_id,),
+    ).fetchall()
+
+
+# ---------------------------------------------------------------- tablero de impacto
+
+def impacto(con, tienda_id):
+    """Números del tablero: qué pasó con lo registrado. Todo sale de la tabla 'resultados'."""
+    totales = {"vendido": 0, "donado": 0, "desechado": 0}
+    for fila in con.execute(
+        """SELECT r.destino, SUM(r.cantidad) AS cantidad FROM resultados r
+           JOIN lotes l ON l.id = r.lote_id WHERE l.tienda_id = ? GROUP BY r.destino""",
+        (tienda_id,),
+    ):
+        totales[fila["destino"]] = fila["cantidad"]
+
+    dinero = con.execute(
+        """SELECT COALESCE(SUM(r.monto), 0) FROM resultados r JOIN lotes l ON l.id = r.lote_id
+           WHERE l.tienda_id = ? AND r.destino = 'vendido'""",
+        (tienda_id,),
+    ).fetchone()[0]
+
+    en_curso = con.execute(
+        """SELECT COALESCE(SUM(l.cantidad_disponible), 0)
+                  + COALESCE((SELECT SUM(r.cantidad) FROM reservas r JOIN lotes l2 ON l2.id = r.lote_id
+                              WHERE l2.tienda_id = ? AND r.estado = 'pendiente'), 0)
+           FROM lotes l WHERE l.tienda_id = ? AND l.estado != 'cerrado'""",
+        (tienda_id, tienda_id),
+    ).fetchone()[0]
+
+    por_categoria = con.execute(
+        """SELECT l.categoria,
+                  SUM(CASE WHEN r.destino = 'vendido' THEN r.cantidad ELSE 0 END) AS vendido,
+                  SUM(CASE WHEN r.destino = 'donado' THEN r.cantidad ELSE 0 END) AS donado,
+                  SUM(CASE WHEN r.destino = 'desechado' THEN r.cantidad ELSE 0 END) AS desechado
+           FROM resultados r JOIN lotes l ON l.id = r.lote_id
+           WHERE l.tienda_id = ? GROUP BY l.categoria ORDER BY desechado DESC, l.categoria""",
+        (tienda_id,),
+    ).fetchall()
+
+    con_final = totales["vendido"] + totales["donado"] + totales["desechado"]
+    return {
+        **totales,
+        "con_final": con_final,
+        "en_curso": en_curso,
+        "dinero": round(dinero, 2),
+        "porcentaje": reglas.porcentaje_rescatado(totales["vendido"], totales["donado"], totales["desechado"]),
+        "por_categoria": [dict(f) for f in por_categoria],
+    }
